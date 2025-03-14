@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Stream</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #111; color: #ddd; text-align: center; }
+        #drop-area { border: 2px dashed #555; padding: 20px; width: 80%; margin: auto; }
+        video { width: 80%; margin-top: 20px; background: black; }
+    </style>
+</head>
+
+<body>
+    <h1>Drag and Drop Video to Stream</h1>
+
+    <!-- Drop Area -->
+    <div id="drop-area">
+        <p>Drop video file here to start streaming!</p>
+    </div>
+
+    <!-- Video Display -->
+    <video id="player" controls autoplay></video>
+
+    <script>
+        const socket = new WebSocket("ws://localhost:8080/ws");
+        const player = document.getElementById("player");
+        const dropArea = document.getElementById("drop-area");
+        let mediaSource = new MediaSource();
+        player.src = URL.createObjectURL(mediaSource);
+
+        // Drag and Drop handling
+        dropArea.addEventListener("dragover", (e) => e.preventDefault());
+        dropArea.addEventListener("drop", async (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (!file.type.startsWith("video/")) {
+                alert("Please drop a valid video file!");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            await fetch("/upload", { method: "POST", body: formData });
+            console.log("Video uploaded and streaming!");
+        });
+
+        // WebSocket video stream handling
+        socket.onmessage = (event) => {
+            const blob = new Blob([event.data]);
+            const reader = new FileReader();
+            reader.onload = () => player.src = reader.result;
+            reader.readAsDataURL(blob);
+        };
+
+        socket.onopen = () => console.log("Connected to server!");
+        socket.onclose = () => console.log("Disconnected from server!");
+    </script>
+</body>
+</html>
+
