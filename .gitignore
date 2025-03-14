@@ -2,3 +2,7 @@
 ./vendor/
 ./vendor/*
 vendor
+*.mp4
+*.jpg
+*.mp3
+*.mpv
